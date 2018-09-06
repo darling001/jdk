@@ -944,6 +944,8 @@ class Thread implements Runnable {
      * @revised 6.0
      */
     public static boolean interrupted() {
+        //JVM层面做了两个操作：1.判断线程是不是属于中断状态 2.如果是，将清除标识做了复位操作。
+        //返回true
         return currentThread().isInterrupted(true);
     }
 

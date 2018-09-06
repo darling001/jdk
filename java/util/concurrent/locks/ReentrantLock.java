@@ -209,10 +209,18 @@ public class ReentrantLock implements Lock, java.io.Serializable {
          * acquire on failure.
          */
         final void lock() {
+            //这是跟公平锁的主要区别，一上来就试探锁是否空闲，如果可以插队，则设置获得锁的线程为当前线程
+            //compareAndSetState，这个方法在前面提到过了，再简单讲解一下，通过cas算法去改变state的值，而这个state 是什么呢？
+            //在AQS中存在一个变量state，对于ReentrantLock来说，如果state=0表示无锁状态、如果state>0表示有锁状态。
+            //所以在这里，是表示当前的state如果等于0，则替换为1，如果替换成功表示获取锁成功了
+            //由于ReentrantLock是可重入锁，所以持有锁的线程可以多次加锁，经过判断加锁线程就是当前持有锁的线程时 （即
+            //exclusiveOwnerThread==Thread.currentThread()），即可加锁，每次加锁都会将state的值+1，state等于几， 就代表当前持有锁的线程加了几次锁;
+            //解锁时每解一次锁就会将state减1，state减到0后，锁就被释放掉，这时其它线程可以加锁；
             if (compareAndSetState(0, 1))
+                //exclusiveOwnerThread属性是AQS从父类AbstractOwnableSynchronizer中继承的属性，用来保存当前占用同步状态的线程,为独占线程
                 setExclusiveOwnerThread(Thread.currentThread());
             else
-                acquire(1);
+                acquire(1);//尝试去获取锁，这是ReentrantLock重入锁一个关键的方法
         }
 
         protected final boolean tryAcquire(int acquires) {
